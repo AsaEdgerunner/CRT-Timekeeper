@@ -1,118 +1,103 @@
-# ⏱️ Timekeeper
+# 🖥️ CRT-Timekeeper
 
 <p align="center">
-  <img src="assets/banner.png" alt="Timekeeper Retro CRT Banner">
+  <img src="assets/banner.png" alt="CRT-Timekeeper Banner">
 </p>
 
 <p align="center">
-  <b>A retro-inspired time tracking application with a classic CRT terminal aesthetic.</b>
+  <b>A retro-inspired time tracking web app built with a classic CRT terminal aesthetic.</b>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Style-Retro%20CRT-green?style=for-the-badge">
+  <a href="https://asaedgerunner.github.io/CRT-Timekeeper/">
+    🌐 Live Demo
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Style-Retro%20CRT-42ff5c?style=for-the-badge">
   <img src="https://img.shields.io/badge/Interface-Terminal%20Inspired-black?style=for-the-badge">
-  <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge">
+  <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Linux-brightgreen?style=for-the-badge">
 </p>
 
 ---
 
-## 🖥️ About
+# 📟 About
 
-**Timekeeper** is a minimalist time tracking application inspired by the golden age of personal computers.
+**CRT-Timekeeper** is a minimalist time tracking application inspired by the golden age of personal computers.
 
-It transforms a simple timer into a nostalgic experience with a vintage CRT terminal interface.
+It recreates the feeling of an old CRT terminal with:
 
-The goal is to combine productivity with the feeling of using an old computer system.
+- Phosphor green monochrome display
+- Scanlines and screen flickering effects
+- Retro terminal typography
+- BIOS-style boot sequence
+- DOS-inspired interface elements
 
----
-
-## 📟 Retro Computer Experience
-
-When Timekeeper starts, it simulates a classic BIOS startup sequence:
-
-```
-TIMEKEEPER BIOS v1.0
-
-MEM CHECK ........ OK
-SYSTEM CLOCK ..... OK
-DISPLAY .......... OK
-
-LOADING TIMEKEEPER...
-
-READY.
-```
+Designed for people who love:
+- Retro computing
+- Cyberpunk aesthetics
+- Minimal productivity tools
+- Classic computer interfaces
 
 ---
 
-## ✨ Features
+# 🌐 Try It Online
 
-### 🟢 CRT Monitor Simulation
+No installation required.
 
-- Green phosphor CRT display
-- Rounded vintage monitor corners
-- Scanline effects
-- Random screen flicker
-- Moving refresh beam animation
-- Classic computer screen feeling
+Open CRT-Timekeeper directly in your browser:
+
+👉 https://asaedgerunner.github.io/CRT-Timekeeper/
+
+Works on:
+
+- Windows
+- Linux
+- macOS
+- Mobile browsers
 
 ---
 
-### ⌨️ Terminal Interface
+# ✨ Features
 
-Inspired by old DOS computers and terminal systems.
+## 🖥️ CRT Display Simulation
 
-Features:
+- Authentic CRT curved screen effect
+- Scanline overlay
+- Random flicker animation
+- Moving refresh beam effect
+- Phosphor glow
+
+## ⏱️ Time Tracking
+
+- Simple and distraction-free timer
+- Recording status indicator
+- Retro styled time display
+
+## 💾 Classic Computer Experience
 
 - VT323 pixel terminal font
+- BIOS-inspired startup sequence
 - DOS-style double borders
-- Retro command interface
-- Minimal distraction design
-
-Example:
-
-```
-> Ran a command
-> Read a file
-> Started timer
-
-STATUS: RECORDING
-```
+- Old-school terminal interface
 
 ---
 
-## ⏳ Time Tracking
+# 🐧 Linux Installation
 
-Current features:
-
-- Start timer
-- Stop timer
-- Track activity sessions
-- Display running status
-
----
-
-## 📸 Screenshots
-
-Screenshots will be added soon.
-
-```
-docs/screenshots/
-```
-
----
-
-## 🚀 Installation
+CRT-Timekeeper includes a native Linux installer.
 
 Clone the repository:
 
 ```bash
-git clone https://github.com/AsaEdgerunner/timekeeper.git
+git clone https://github.com/AsaEdgerunner/CRT-Timekeeper.git
 ```
 
-Enter the project folder:
+Enter the project directory:
 
 ```bash
-cd timekeeper
+cd CRT-Timekeeper
 ```
 
 Run installer:
@@ -122,62 +107,78 @@ chmod +x install.sh
 ./install.sh
 ```
 
----
-
-## 🛠️ Project Structure
-
-```
-timekeeper/
-│
-├── app/
-│   ├── index.html
-│   └── icon.svg
-│
-├── assets/
-│   └── banner.png
-│
-├── docs/
-│   └── screenshots/
-│
-├── install.sh
-└── README.md
-```
+The application will appear in your desktop application menu.
 
 ---
 
-## 🗺️ Roadmap
+# 🪟 Windows Usage
 
-- [x] Retro CRT interface
-- [x] Terminal inspired UI
-- [x] BIOS boot animation
-- [x] Vintage computer aesthetic
+Windows users can run CRT-Timekeeper directly from the web version:
 
-Future:
+🌐 https://asaedgerunner.github.io/CRT-Timekeeper/
 
-- [ ] Multiple timers
-- [ ] Session history
+No installation required.
+
+---
+
+# 📸 Screenshot
+
+<p align="center">
+  <img src="docs/screenshots/main-screen.png" width="800">
+</p>
+
+---
+
+# 🛠️ Technologies
+
+Built with:
+
+- HTML5
+- CSS3
+- JavaScript
+- SVG
+- Google Fonts (VT323)
+
+---
+
+# 🗺️ Roadmap
+
+## ✅ Version 1.0
+
+- [x] CRT visual system
+- [x] Retro boot sequence
+- [x] Web deployment
+- [x] Linux installer
+
+## 🚧 Version 1.5
+
+- [ ] Save sessions
+- [ ] Time history
 - [ ] Export reports
-- [ ] Custom CRT themes
-- [ ] More retro effects
-- [ ] Sound effects
-- [ ] More classic computer modes
+- [ ] More CRT themes
+
+## 🔮 Version 2.0
+
+- [ ] Local database
+- [ ] Desktop packages
+- [ ] Advanced productivity statistics
 
 ---
 
-## 🤝 Contributing
+# 🤝 Contributing
 
-Contributions, ideas and improvements are welcome.
+Contributions, ideas, and suggestions are welcome.
 
 Feel free to open an issue or submit a pull request.
 
 ---
 
-## 📜 License
+# 📜 License
 
 This project is licensed under the MIT License.
 
 ---
 
 <p align="center">
-  💚 Built with nostalgia for classic computers.
+  Built with 💚 and nostalgia for classic computers.
 </p>
