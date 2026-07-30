@@ -4,7 +4,7 @@ set -e
 
 APP_NAME="CRT-Timekeeper"
 APP_SLUG="crt-timekeeper"
-SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/app"
+SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/docs"
 INSTALL_DIR="$HOME/.local/share/${APP_SLUG}"
 DESKTOP_DIR="$HOME/.local/share/applications"
 DESKTOP_FILE="${DESKTOP_DIR}/${APP_SLUG}.desktop"
