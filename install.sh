@@ -2,8 +2,8 @@
 # Timekeeper — installer for Linux (desktop launcher, no root required)
 set -e
 
-APP_NAME="Timekeeper"
-APP_SLUG="timekeeper"
+APP_NAME="CRT-Timekeeper"
+APP_SLUG="crt-timekeeper"
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/app"
 INSTALL_DIR="$HOME/.local/share/${APP_SLUG}"
 DESKTOP_DIR="$HOME/.local/share/applications"
