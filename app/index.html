@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timekeeper</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#01100a;
+    --phosphor:#42ff5c;
+    --phosphor-mid:#22b53a;
+    --phosphor-dim:#0e5a1c;
+    --phosphor-glow:rgba(66,255,92,0.45);
+    --alert:#ff4433;
+    --alert-glow:rgba(255,68,51,0.55);
+    --amber:#ffb400;
+    --mono:'VT323', monospace;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; background:#000; overflow:hidden; }
+  body{
+    font-family:var(--mono);
+    color:var(--phosphor);
+    -webkit-font-smoothing:none;
+    font-size:20px;
+  }
+
+  /* ============ CRT screen wrapper ============ */
+  .crt{
+    position:fixed; inset:14px;
+    background:radial-gradient(ellipse at 50% 40%, #041a0d 0%, var(--bg) 70%, #000 100%);
+    border-radius:22px;
+    box-shadow:
+      inset 0 0 10px 3px rgba(0,0,0,0.9),
+      inset 0 0 120px 20px rgba(0,0,0,0.85),
+      0 0 40px rgba(0,0,0,0.9);
+    overflow:hidden;
+  }
+  .crt::before{ /* scanlines */
+    content:'';
+    position:absolute; inset:0; z-index:8; pointer-events:none;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0) 0px, rgba(0,0,0,0) 1px,
+      rgba(0,0,0,0.28) 2px, rgba(0,0,0,0) 3px
+    );
+  }
+  .crt::after{ /* vignette */
+    content:'';
+    position:absolute; inset:0; z-index:9; pointer-events:none;
+    background:radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%);
+  }
+  .flicker{
+    position:absolute; inset:0; z-index:10; pointer-events:none;
+    background:rgba(66,255,92,0.02);
+    animation:flicker 6.5s infinite;
+  }
+  @keyframes flicker{
+    0%,93%,100%{ opacity:0; }
+    94%{ opacity:1; }
+    95%{ opacity:0.2; }
+    96%{ opacity:0.7; }
+    97%{ opacity:0.1; }
+  }
+  .scan-bar{
+    position:absolute; left:0; right:0; height:120px; z-index:7; pointer-events:none;
+    background:linear-gradient(to bottom, rgba(66,255,92,0) 0%, rgba(66,255,92,0.05) 50%, rgba(66,255,92,0) 100%);
+    animation:sweep 9s linear infinite;
+  }
+  @keyframes sweep{ 0%{ top:-120px; } 100%{ top:100%; } }
+
+  /* ============ boot sequence ============ */
+  .boot{
+    position:absolute; inset:0; z-index:20;
+    background:#000;
+    padding:40px;
+    font-size:20px;
+    line-height:1.6;
+    color:var(--phosphor);
+    white-space:pre;
+    transition:opacity .4s ease;
+  }
+  .boot.hidden{ opacity:0; pointer-events:none; }
+
+  /* ============ layout ============ */
+  .shell{
+    position:relative; z-index:1;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    padding:22px 26px;
+  }
+
+  .topbar{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding-bottom:10px;
+    border-bottom:1px dashed var(--phosphor-dim);
+    flex-shrink:0;
+    text-shadow:0 0 6px var(--phosphor-glow);
+  }
+  .topbar .logo{ font-size:26px; letter-spacing:0.05em; }
+  .topbar .logo .blk{ display:inline-block; width:11px; height:20px; background:var(--phosphor); margin-left:4px; animation:blink 1s step-end infinite; vertical-align:-3px; }
+  .topbar .status{ font-size:20px; letter-spacing:0.05em; }
+  .topbar .status.rec{ color:var(--alert); text-shadow:0 0 8px var(--alert-glow); animation:blink 1s step-end infinite; }
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+  .layout{
+    flex:1; min-height:0;
+    display:grid;
+    grid-template-columns: 1fr 400px;
+    gap:22px;
+    padding-top:20px;
+  }
+
+  /* ============ retro box ============ */
+  .box{
+    border:3px double var(--phosphor-mid);
+    background:rgba(66,255,92,0.02);
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    box-shadow:0 0 18px rgba(66,255,92,0.05);
+  }
+  .box-title{
+    padding:8px 16px;
+    border-bottom:1px dashed var(--phosphor-dim);
+    font-size:19px;
+    letter-spacing:0.08em;
+    color:var(--phosphor);
+    display:flex; justify-content:space-between; align-items:baseline;
+    flex-shrink:0;
+  }
+  .box-title .total b{ color:var(--amber); text-shadow:0 0 6px rgba(255,180,0,0.5); }
+
+  /* ============ main panel ============ */
+  .main-box{ align-items:center; justify-content:center; padding:30px 24px; }
+
+  .task-line{
+    width:100%; max-width:520px;
+    display:flex; align-items:center; gap:10px;
+    padding-bottom:10px;
+    border-bottom:1px dashed var(--phosphor-dim);
+  }
+  .task-line .prompt{ color:var(--amber); font-size:22px; }
+  .task-line input{
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--phosphor); font-family:var(--mono); font-size:22px; letter-spacing:0.02em;
+    text-shadow:0 0 6px var(--phosphor-glow);
+  }
+  .task-line input::placeholder{ color:var(--phosphor-dim); }
+  .task-line input:disabled{ color:var(--phosphor); opacity:0.9; }
+
+  .clock{
+    margin-top:34px;
+    text-align:center;
+    font-size:clamp(64px, 9vw, 108px);
+    letter-spacing:0.03em;
+    line-height:1;
+    color:var(--phosphor);
+    text-shadow:0 0 16px var(--phosphor-glow), 0 0 2px var(--phosphor);
+    font-variant-numeric: tabular-nums;
+  }
+  .clock .sep{ color:var(--phosphor-mid); }
+  body.running .clock{ color:#eaffea; text-shadow:0 0 22px var(--phosphor-glow), 0 0 4px #fff; }
+
+  .controls{ margin-top:26px; display:flex; gap:16px; }
+
+  .btn{
+    font-family:var(--mono);
+    font-size:22px;
+    letter-spacing:0.08em;
+    background:transparent;
+    border:1px solid var(--phosphor-mid);
+    color:var(--phosphor);
+    padding:8px 22px;
+    cursor:pointer;
+    text-shadow:0 0 6px var(--phosphor-glow);
+    transition:background .12s steps(1), color .12s steps(1);
+  }
+  .btn:hover{ background:var(--phosphor); color:#001a00; text-shadow:none; }
+  .btn.stop{ border-color:var(--alert); color:var(--alert); text-shadow:0 0 6px var(--alert-glow); }
+  .btn.stop:hover{ background:var(--alert); color:#1a0000; text-shadow:none; }
+  .btn.pause{ border-color:var(--amber); color:var(--amber); text-shadow:0 0 6px rgba(255,180,0,0.5); }
+  .btn.pause:hover{ background:var(--amber); color:#1a1200; text-shadow:none; }
+
+  .status-hint{
+    margin-top:16px;
+    font-size:18px;
+    color:var(--phosphor-mid);
+    height:18px;
+    letter-spacing:0.04em;
+  }
+  .status-hint .rec-dot{ color:var(--alert); }
+
+  /* ============ session log ============ */
+  .log-list{
+    flex:1; min-height:0;
+    overflow-y:auto;
+    padding:4px 0;
+  }
+  .log-list::-webkit-scrollbar{ width:8px; }
+  .log-list::-webkit-scrollbar-thumb{ background:var(--phosphor-dim); }
+  .log-list::-webkit-scrollbar-track{ background:transparent; }
+
+  .entry{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 16px;
+    border-bottom:1px dotted var(--phosphor-dim);
+    font-size:19px;
+  }
+  .entry .idx{ color:var(--phosphor-dim); width:34px; flex-shrink:0; }
+  .entry .name{
+    flex:1; min-width:0;
+    color:var(--phosphor);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .entry .dur{ color:var(--amber); flex-shrink:0; text-shadow:0 0 6px rgba(255,180,0,0.4); }
+  .entry .del{
+    flex-shrink:0;
+    color:var(--alert);
+    border:1px solid var(--alert);
+    padding:0px 7px;
+    font-size:15px;
+    letter-spacing:0.05em;
+    cursor:pointer;
+    line-height:1.5;
+    transition:background .12s steps(1), color .12s steps(1);
+  }
+  .entry .del:hover{ background:var(--alert); color:#1a0000; }
+  .entry .range{ display:none; }
+
+  .empty{
+    padding:26px 16px;
+    color:var(--phosphor-dim);
+    font-size:19px;
+  }
+  .empty .blk{ display:inline-block; width:10px; height:16px; background:var(--phosphor-dim); margin-left:4px; animation:blink 1s step-end infinite; vertical-align:-2px; }
+
+  .footer-hint{
+    padding:8px 16px;
+    border-top:1px dashed var(--phosphor-dim);
+    font-size:14px;
+    color:var(--phosphor-dim);
+    letter-spacing:0.03em;
+    flex-shrink:0;
+  }
+
+  ::selection{ background:var(--phosphor); color:#001a00; }
+
+  /* ============ responsive ============ */
+  @media (max-width: 900px){
+    .layout{ grid-template-columns:1fr; grid-template-rows:1fr 240px; overflow-y:auto; }
+    .clock{ font-size:56px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .flicker, .scan-bar, .topbar .logo .blk, .empty .blk, .topbar .status.rec{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="crt">
+  <div class="scan-bar"></div>
+  <div class="flicker"></div>
+
+  <div class="boot" id="boot">TIMEKEEPER BIOS v1.0
+COPYRIGHT (C) NOVYX SYSTEMS
+
+MEM CHECK.......... OK
+LOADING SESSIONS...</div>
+
+  <div class="shell">
+    <div class="topbar">
+      <div class="logo">TIMEKEEPER<span class="blk"></span></div>
+      <div class="status" id="statusText">[ STANDBY ]</div>
+    </div>
+
+    <div class="layout">
+      <div class="box main-box">
+        <div class="task-line">
+          <span class="prompt">task&gt;</span>
+          <input id="taskInput" type="text" placeholder="type what you're working on_" maxlength="80" autocomplete="off">
+        </div>
+
+        <div class="clock" id="clock">00<span class="sep">:</span>00<span class="sep">:</span>00</div>
+
+        <div class="controls" id="controls">
+          <button class="btn start" id="startBtn">[ START ]</button>
+        </div>
+
+        <div class="status-hint" id="statusHint">&nbsp;</div>
+      </div>
+
+      <div class="box log-box">
+        <div class="box-title">
+          <span>SESSION LOG</span>
+          <span class="total" id="historyTotal"></span>
+        </div>
+        <div class="log-list" id="historyList"></div>
+        <div class="footer-hint">SPACE = pause/resume &middot; click [DEL] to remove an entry</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ boot sequence ============ */
+  const boot = document.getElementById('boot');
+  const bootLines = ['MEM CHECK.......... OK','LOADING SESSIONS... OK','> READY_'];
+  let bootStep = 1;
+  const bootTimer = setInterval(()=>{
+    if(bootStep < bootLines.length){
+      boot.textContent = 'TIMEKEEPER BIOS v1.0\nCOPYRIGHT (C) NOVYX SYSTEMS\n\n' + bootLines.slice(0,bootStep+1).join('\n');
+      bootStep++;
+    } else {
+      clearInterval(bootTimer);
+      boot.classList.add('hidden');
+      setTimeout(()=>{ boot.remove(); }, 450);
+    }
+  }, 260);
+
+  /* ============ persistence ============ */
+  const LS_SESSIONS = 'timekeeper_sessions_v1';
+  const LS_ACTIVE = 'timekeeper_active_v1';
+
+  function loadSessions(){
+    try{ return JSON.parse(localStorage.getItem(LS_SESSIONS)) || []; }
+    catch(e){ return []; }
+  }
+  function saveSessions(list){ localStorage.setItem(LS_SESSIONS, JSON.stringify(list)); }
+  function loadActive(){
+    try{ return JSON.parse(localStorage.getItem(LS_ACTIVE)); }
+    catch(e){ return null; }
+  }
+  function saveActive(state){
+    if(state) localStorage.setItem(LS_ACTIVE, JSON.stringify(state));
+    else localStorage.removeItem(LS_ACTIVE);
+  }
+
+  let sessions = loadSessions();
+  let active = loadActive();
+
+  /* ============ dom ============ */
+  const taskInput = document.getElementById('taskInput');
+  const clockEl = document.getElementById('clock');
+  const controls = document.getElementById('controls');
+  const statusHint = document.getElementById('statusHint');
+  const historyList = document.getElementById('historyList');
+  const historyTotal = document.getElementById('historyTotal');
+  const statusText = document.getElementById('statusText');
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function fmtClock(ms){
+    const totalSec = Math.floor(ms/1000);
+    return { h: Math.floor(totalSec/3600), m: Math.floor((totalSec%3600)/60), s: totalSec%60 };
+  }
+  function renderClock(ms){
+    const {h,m,s} = fmtClock(ms);
+    clockEl.innerHTML = `${pad(h)}<span class="sep">:</span>${pad(m)}<span class="sep">:</span>${pad(s)}`;
+  }
+  function fmtDuration(ms){
+    const totalSec = Math.max(0, Math.round(ms/1000));
+    const h = Math.floor(totalSec/3600), m = Math.floor((totalSec%3600)/60), s = totalSec%60;
+    if(h>0) return `${h}h ${pad(m)}m`;
+    if(m>0) return `${m}m ${pad(s)}s`;
+    return `${s}s`;
+  }
+  function elapsedOf(state){
+    if(!state) return 0;
+    let e = state.accumulated;
+    if(state.running && state.startedAtEpoch) e += (Date.now() - state.startedAtEpoch);
+    return e;
+  }
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function setSceneRunning(isRunning){
+    document.body.classList.toggle('running', isRunning);
+    statusText.textContent = isRunning ? '[ RECORDING ]' : '[ STANDBY ]';
+    statusText.classList.toggle('rec', isRunning);
+  }
+
+  function renderControlsIdle(){
+    controls.innerHTML = `<button class="btn start" id="startBtn">[ START ]</button>`;
+    document.getElementById('startBtn').addEventListener('click', handleStart);
+    taskInput.disabled = false;
+    statusHint.textContent = '\u00a0';
+  }
+  function renderControlsRunning(){
+    controls.innerHTML = `
+      <button class="btn pause" id="pauseBtn">[ PAUSE ]</button>
+      <button class="btn stop" id="stopBtn">[ FINISH ]</button>
+    `;
+    document.getElementById('pauseBtn').addEventListener('click', handlePause);
+    document.getElementById('stopBtn').addEventListener('click', handleStop);
+    taskInput.disabled = true;
+    statusHint.innerHTML = `<span class="rec-dot">&#9679;</span> tracking: ${escapeHtml(active.task)}`;
+  }
+  function renderControlsPaused(){
+    controls.innerHTML = `
+      <button class="btn start" id="resumeBtn">[ RESUME ]</button>
+      <button class="btn stop" id="stopBtn">[ FINISH ]</button>
+    `;
+    document.getElementById('resumeBtn').addEventListener('click', handleResume);
+    document.getElementById('stopBtn').addEventListener('click', handleStop);
+    taskInput.disabled = true;
+    statusHint.textContent = '-- paused --';
+  }
+
+  let tickHandle = null;
+  function startTicking(){
+    stopTicking();
+    tickHandle = setInterval(()=>{ renderClock(elapsedOf(active)); }, 250);
+  }
+  function stopTicking(){ if(tickHandle){ clearInterval(tickHandle); tickHandle = null; } }
+
+  function handleStart(){
+    const task = taskInput.value.trim();
+    if(!task){
+      taskInput.focus();
+      taskInput.style.color = 'var(--alert)';
+      setTimeout(()=>{ taskInput.style.color=''; }, 700);
+      return;
+    }
+    active = { task, accumulated: 0, startedAtEpoch: Date.now(), running: true, firstStart: new Date().toISOString() };
+    saveActive(active);
+    setSceneRunning(true);
+    renderControlsRunning();
+    startTicking();
+    renderClock(0);
+  }
+  function handlePause(){
+    if(!active || !active.running) return;
+    active.accumulated += (Date.now() - active.startedAtEpoch);
+    active.running = false;
+    active.startedAtEpoch = null;
+    saveActive(active);
+    setSceneRunning(false);
+    renderControlsPaused();
+    stopTicking();
+    renderClock(elapsedOf(active));
+  }
+  function handleResume(){
+    if(!active || active.running) return;
+    active.running = true;
+    active.startedAtEpoch = Date.now();
+    saveActive(active);
+    setSceneRunning(true);
+    renderControlsRunning();
+    startTicking();
+  }
+  function handleStop(){
+    if(!active) return;
+    const totalMs = elapsedOf(active);
+    const endedAt = new Date().toISOString();
+    sessions.unshift({ task: active.task, ms: totalMs, startedAt: active.firstStart, endedAt });
+    saveSessions(sessions);
+    active = null;
+    saveActive(null);
+    setSceneRunning(false);
+    stopTicking();
+    renderClock(0);
+    taskInput.value = '';
+    renderControlsIdle();
+    renderHistory();
+  }
+  function deleteSession(idx){
+    sessions.splice(idx,1);
+    saveSessions(sessions);
+    renderHistory();
+  }
+
+  function renderHistory(){
+    if(sessions.length === 0){
+      historyList.innerHTML = `<div class="empty">NO ENTRIES<span class="blk"></span></div>`;
+      historyTotal.textContent = '';
+      return;
+    }
+    const totalMs = sessions.reduce((a,s)=>a+s.ms,0);
+    historyTotal.innerHTML = `TOTAL <b>${fmtDuration(totalMs)}</b>`;
+
+    historyList.innerHTML = sessions.map((s, idx)=>{
+      const num = String(sessions.length - idx).padStart(3,'0');
+      return `
+        <div class="entry">
+          <span class="idx">${num}</span>
+          <span class="name">${escapeHtml(s.task)}</span>
+          <span class="dur">${fmtDuration(s.ms)}</span>
+          <span class="del" data-idx="${idx}" title="Delete entry">DEL</span>
+        </div>`;
+    }).join('');
+
+    historyList.querySelectorAll('.del').forEach(el=>{
+      el.addEventListener('click', (e)=>{
+        const idx = parseInt(e.currentTarget.getAttribute('data-idx'),10);
+        deleteSession(idx);
+      });
+    });
+  }
+
+  function init(){
+    if(active){
+      taskInput.value = active.task;
+      if(active.running){
+        setSceneRunning(true);
+        renderControlsRunning();
+        startTicking();
+      } else {
+        setSceneRunning(false);
+        renderControlsPaused();
+      }
+      renderClock(elapsedOf(active));
+    } else {
+      renderControlsIdle();
+      renderClock(0);
+    }
+    renderHistory();
+
+    taskInput.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' && !taskInput.disabled) handleStart();
+    });
+    window.addEventListener('keydown', (e)=>{
+      if(e.code === 'Space' && document.activeElement !== taskInput){
+        e.preventDefault();
+        if(!active) return;
+        if(active.running) handlePause(); else handleResume();
+      }
+    });
+  }
+  init();
+
+})();
+</script>
+</body>
+</html>
